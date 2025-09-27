@@ -51,6 +51,16 @@ app.get('/', (req, res) => {
 });
 const fs = require('fs');
 
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+    console.log('-------------------------------------------');
+    if (!process.licenseAddon) {
+        console.log('WARNING: C++ addon failed to load. Using Mock Service.');
+    } else {
+        console.log('SUCCESS: C++ Native Addon is loaded and ready.');
+    }
+    console.log('-------------------------------------------');
+});
 
 
 if (typeof __is_live_preview !== 'undefined' && __is_live_preview) {
