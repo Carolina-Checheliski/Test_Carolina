@@ -3,16 +3,12 @@
     {
       "target_name": "ManageLicenseAddon",
       "sources": [
-        "test_Carolina\src\backend\addon.cpp",
-        "test_Carolina\src\backend\ManageLicense.h"
+        "src/backend/addon.cpp",
+        "src/backend/ManageLicense.cpp"
       ],
-
-"include_dirs": [
-        "<!@(node -p \"require('node-addon-api').include\")",
-        "src"
-      ],
-      "dependencies": [
-        "<!@(node -p \"require('node-addon-api').gyp\")"
+      "include_dirs": [
+        "src/backend",
+        "C:\\Users\\Carol\\Desktop\\Test_Carolina\\test_Carolina\\node_modules\\node-addon-api"
       ],
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "-fno-exceptions" ],
