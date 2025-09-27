@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>OptimumG License Management</title>
+    
+    
+    <style>
+        body {
+            background-color: #f9fbfbbe; 
+            font-family: Inter, sans-serif;
+        }
+    </style>
+
+  
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    
+    
+</head>
+<body>
+    <div id="root"></div>
+
+    
+    <script type="text/babel">
+        
+        const { useState, useEffect, useMemo } = React;
+        
+        // neww
+        const SvgIcon = ({ children, className }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const KeyIcon = (props) => (
+            <SvgIcon {...props}>
+                <path d="m20.94 11.58-1.57-1.57a6.23 6.23 0 0 0-4.22-1.7V5.5l-3.2 3.2v2.1c-.8.8-1.7 1.4-2.7 1.8l-1.6 1.6v2.1h2.1l3.3-3.3c.7.3 1.5.5 2.3.5 1.7 0 3.3-.6 4.5-1.7l1.5-1.5z"/>
+                <circle cx="11" cy="11" r="3"/>
+                <path d="m16 8 3-3"/>
+            </SvgIcon>
+        );
+
+        const PowerIcon = (props) => (
+            <SvgIcon {...props}>
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                <line x1="12" x2="12" y1="2" y2="12"/>
+            </SvgIcon>
+        );
+        
+        const LoaderIcon = (props) => (
+            <SvgIcon {...props}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.4"/>
+            </SvgIcon>
+        );
+        
+        const AlertTriangleIcon = (props) => (
+            <SvgIcon {...props}>
+                <path d="m21.73 18-9-16-9 16h18Z"/>
+                <path d="M12 9v4"/>
+                <path d="M12 17h.01"/>
+            </SvgIcon>
+        );
+        
+        const CheckCircleIcon = (props) => (
+            <SvgIcon {...props}>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <path d="M9 11l3 3L22 4"/>
+            </SvgIcon>
+        );
+        
+        const ClockIcon = (props) => (
+            <SvgIcon {...props}>
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </SvgIcon>
+        );
+
+        
+        const Key = KeyIcon;
+        const Power = PowerIcon;
+        const Loader = LoaderIcon;
+        const AlertTriangle = AlertTriangleIcon;
+        const CheckCircle = CheckCircleIcon;
+        const Clock = ClockIcon;
+
+        
+
+
+        
+        const MOCK_DB = {
+          status: 'Not Activated', 
+          key: null,
+          expiryDate: null,
+        };
+
+
+
+        const MOCK_LICENSE_EXPIRY = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); 
+
+
+
+
+        const fetchLicenseStatus = () => new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              status: MOCK_DB.status,
+              key: MOCK_DB.key,
+              expiryDate: MOCK_DB.expiryDate ? MOCK_DB.expiryDate.toISOString().split('T')[0] : 'N/A',
+            });
+          }, 500);
+        });
+
+        const activateLicense = (key) => new Promise((resolve, reject) => {
+          setTimeout(() => {
+            
+            if (key && key.length >= 16 && key.toUpperCase().includes('G')) {
+              MOCK_DB.status = 'Active';
+              MOCK_DB.key = key.toUpperCase();
+              MOCK_DB.expiryDate = MOCK_LICENSE_EXPIRY;
+              resolve(true);
+            } else {
+              reject(new Error("Invalid or revoked key. (Mock Failure)"));
+            }
+          }, 1200);
+        });
+
+        const deactivateLicense = () => new Promise((resolve) => {
+          setTimeout(() => {
+            MOCK_DB.status = 'Not Activated';
+            MOCK_DB.key = null;
+            MOCK_DB.expiryDate = null;
+            resolve(true);
+          }, 800);
+        });
+
+        //adding
+
+        
+        function App() {
+          const [licenseStatus, setLicenseStatus] = useState(null);
+          const [licenseKeyInput, setLicenseKeyInput] = useState('');
+          const [isLoading, setIsLoading] = useState(false);
+          const [message, setMessage] = useState({ text: '', type: 'info' });
+
+          const loadStatus = async () => {
+            setIsLoading(true);
+            setMessage({ text: 'Checking license status...', type: 'info' });
+            try {
+              const status = await fetchLicenseStatus();
+              setLicenseStatus(status);
+              setMessage({ text: 'License status loaded successfully.', type: 'success' });
+            } catch (error) {
+              setMessage({ text: `Failed to load status: ${error.message}`, type: 'error' });
+              setLicenseStatus(null);
+            } finally {
+              setIsLoading(false);
+            }
+          };
+
+          useEffect(() => {
+            loadStatus();
+          }, []);
+
+
+
+
+
+          const handleActivate = async () => {
+            if (!licenseKeyInput.trim()) {
+              setMessage({ text: 'Please enter a license key.', type: 'warning' });
+              return;
+            }
+
+            setIsLoading(true);
+            setMessage({ text: 'Attempting to activate license...', type: 'info' });
+            try {
+              await activateLicense(licenseKeyInput.trim());
+              setMessage({ text: 'License successfully activated!', type: 'success' });
+              setLicenseKeyInput('');
+              await loadStatus(); // Refresh status after success
+            } catch (error) {
+              setMessage({ text: `Activation failed: ${error.message}`, type: 'error' });
+            } finally {
+              setIsLoading(false);
+            }
+          };
+
+
+
+
+
+          const handleDeactivate = async () => {
+            setIsLoading(true);
+            setMessage({ text: 'Attempting to deactivate license...', type: 'info' });
+            try {
+              await deactivateLicense();
+              setMessage({ text: 'License successfully deactivated.', type: 'success' });
+              await loadStatus(); // Refresh status after success
+            } catch (error) {
+              setMessage({ text: `Deactivation failed: ${error.message}`, type: 'error' });
+            } finally {
+              setIsLoading(false);
+            }
+          };
+
+          const { statusText, statusClasses, statusIcon: StatusIcon } = useMemo(() => {
+            if (!licenseStatus) {
+              return { statusText: 'N/A', statusClasses: 'bg-gray-400', statusIcon: AlertTriangle };
+            }
+            switch (licenseStatus.status) {
+              case 'Active':
+                return { statusText: 'ACTIVE', statusClasses: 'bg-green-600', statusIcon: CheckCircle };
+              case 'Expired':
+                return { statusText: 'EXPIRED', statusClasses: 'bg-red-600', statusIcon: Clock };
+              case 'Not Activated':
+              default:
+                return { statusText: 'INACTIVE', statusClasses: 'bg-yellow-600', statusIcon: Power };
+            }
+          }, [licenseStatus]);
+
+          const messageClasses = useMemo(() => {
+            switch (message.type) {
+              case 'success': return 'bg-green-100 text-green-700 border-green-400';
+              case 'error': return 'bg-red-100 text-red-700 border-red-400';
+              case 'warning': return 'bg-yellow-100 text-yellow-700 border-yellow-400';
+              case 'info':
+              default: return 'bg-blue-100 text-blue-700 border-blue-400';
+            }
+          }, [message.type]);
+
+
+          return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-inter">
+              <div className="w-full max-w-4xl bg-white shadow-2xl rounded-xl overflow-hidden transition-all duration-300">
+
+                {/* Header */}
+                <div className="p-6 bg-indigo-700 text-white flex justify-between items-center">
+                  <h1 className="text-3xl font-bold tracking-tight">
+                    OptimumG License Management
+                  </h1>
+                  <button
+                    onClick={loadStatus}
+                    disabled={isLoading}
+                    className="flex items-center space-x-2 p-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg transition duration-150 shadow-md disabled:opacity-70"
+                    title="Refresh Status"
+                  >
+                    <Loader className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">Refresh</span>
+                  </button>
+                </div>
+
+                {/* Content Area */}
+                <div className="p-6 space-y-8">
+
+                  {/* Status Panel (Top Card) */}
+                  <div className="p-6 bg-gray-100 border border-gray-200 rounded-lg shadow-inner">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
+                      <Key className="h-5 w-5 mr-2 text-indigo-700" />
+                      Current License Status
+                    </h2>
+                    {licenseStatus ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
+                        {/* Status Indicator */}
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-gray-500">Status</p>
+                          <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-white font-bold tracking-wider text-sm shadow-md ${statusClasses}`}>
+                            <StatusIcon className="h-4 w-4 mr-2" />
+                            {statusText}
+                          </div>
+                        </div>
+
+                          
+
+
+                        {/* License Key */}
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-gray-500">Active Key</p>
+                          <p className="text-lg font-mono text-gray-800 break-all">
+                            {licenseStatus.key ? `${licenseStatus.key.substring(0, 4)}...` : 'N/A'}
+                          </p>
+                        </div>
+
+                        {/* Expiry Date */}
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-gray-500">Expiration</p>
+                          <p className="text-lg font-semibold text-gray-800">
+                            {licenseStatus.expiryDate || 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                        <div className='text-center py-4 text-gray-500'>
+                            {isLoading ? 'Loading...' : 'Could not fetch license status.'}
+                        </div>
+                    )}
+                  </div>
+
+                  {/* Message Box */}
+                  {message.text && (
+                    <div className={`p-4 border-l-4 rounded-lg transition-all duration-300 ${messageClasses}`}>
+                      <p className="font-medium">{message.text}</p>
+                    </div>
+                  )}
+
+                  {/* Actions Panel (Bottom Card) */}
+                  <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
+                      <Power className="h-5 w-5 mr-2 text-indigo-700" />
+                      License Actions
+                    </h2>
+
+                    <div className="space-y-4">
+                      {/* Activation Form */}
+                      <div className="border p-4 rounded-lg">
+                        <h3 className="text-lg font-medium mb-3 text-gray-800">Activate New License</h3>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <input
+                            type="text"
+                            placeholder="Enter 16-digit License Key (e.g., A123-B456-C789-D00G)"
+                            value={licenseKeyInput}
+                            onChange={(e) => setLicenseKeyInput(e.target.value)}
+                            disabled={isLoading}
+                            className="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50"
+                          />
+                          <button
+                            onClick={handleActivate}
+                            disabled={isLoading || statusText === 'ACTIVE'}
+                            className="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {isLoading ? 'Activating...' : 'Activate'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Deactivation Button */}
+                      <div className="border p-4 rounded-lg bg-red-50/50">
+                        <h3 className="text-lg font-medium mb-3 text-gray-800">Deactivate License</h3>
+                        <button
+                          onClick={handleDeactivate}
+                          disabled={isLoading || statusText === 'INACTIVE' || statusText === 'EXPIRED'}
+                          className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {isLoading ? 'Deactivating...' : 'Deactivate Current License'}
+                        </button>
+                        <p className="text-sm text-gray-500 mt-2">
+                            Deactivating will free up the license for use on another machine.
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        }
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
