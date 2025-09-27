@@ -49,3 +49,56 @@ app.get('/', (req, res) => {
 
     res.send(htmlContent);
 });
+const fs = require('fs');
+
+
+
+if (typeof __is_live_preview !== 'undefined' && __is_live_preview) {
+    app.get('/', (req, res) => {
+        let htmlContent = fs.readFileSync(path.join(__dirname, 'frontend.html'), 'utf8');
+        
+        let addonScript = '';
+        if (typeof process.licenseAddon !== 'undefined') {
+            addonScript = `
+            <script>
+                window.licenseAddon = {
+                    checkStatus: () => new Promise((resolve, reject) => {
+                        try {
+                            const status = process.licenseAddon.checkStatus();
+                            // Delay to simulate network latency, keeping the frontend UI responsive
+                            setTimeout(() => resolve(status), 500); 
+                        } catch (e) {
+                            reject(e);
+                        }
+                    }),
+                    activate: (key) => new Promise((resolve, reject) => {
+                        try {
+                            const success = process.licenseAddon.activate(key);
+                            setTimeout(() => {
+                                if (success) {
+                                    resolve(true);
+                                } else {
+                                    // Match the mock service's error structure for consistency
+                                    reject(new Error('Invalid or revoked key. (C++ Check Failed)')); 
+                                }
+                            }, 500);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    }),
+                    deactivate: () => new Promise((resolve, reject) => {
+                        try {
+                            const success = process.licenseAddon.deactivate();
+                            setTimeout(() => resolve(true), 500);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    })
+                };
+            </script>`;
+        }
+        
+        htmlContent = htmlContent.replace('</head>', addonScript + '</head>');
+        res.send(htmlContent);
+    });
+}
