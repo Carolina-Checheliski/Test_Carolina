@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -95,7 +97,22 @@
             </SvgIcon>
         );
 
-        
+        //new icon
+
+        const ZapIcon = (props) => (
+            <SvgIcon {...props}>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </SvgIcon>
+        );
+
+        const Key = KeyIcon;
+        const Power = PowerIcon;
+        const Loader = LoaderIcon;
+        const AlertTriangle = AlertTriangleIcon;
+        const CheckCircle = CheckCircleIcon;
+        const Clock = ClockIcon;
+        // NEW 
+        const Zap = ZapIcon;-
         const Key = KeyIcon;
         const Power = PowerIcon;
         const Loader = LoaderIcon;
@@ -115,43 +132,88 @@
 
 
 
-        const MOCK_LICENSE_EXPIRY = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); 
-
-
-
-
-        const fetchLicenseStatus = () => new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              status: MOCK_DB.status,
-              key: MOCK_DB.key,
-              expiryDate: MOCK_DB.expiryDate ? MOCK_DB.expiryDate.toISOString().split('T')[0] : 'N/A',
-            });
-          }, 500);
+       const mockFetchStatus = () => new Promise((resolve) => {
+    setTimeout(() => {
+        resolve({
+            status: MOCK_DB.status,
+            key: MOCK_DB.key,
+            expiryDate: MOCK_DB.expiryDate ? MOCK_DB.expiryDate.toISOString().split('T')[0] : 'N/A',
         });
+    }, 500);
+});
 
-        const activateLicense = (key) => new Promise((resolve, reject) => {
-          setTimeout(() => {
-            
-            if (key && key.length >= 16 && key.toUpperCase().includes('G')) {
-              MOCK_DB.status = 'Active';
-              MOCK_DB.key = key.toUpperCase();
-              MOCK_DB.expiryDate = MOCK_LICENSE_EXPIRY;
-              resolve(true);
-            } else {
-              reject(new Error("Invalid or revoked key. (Mock Failure)"));
-            }
-          }, 1200);
-        });
-
-        const deactivateLicense = () => new Promise((resolve) => {
-          setTimeout(() => {
-            MOCK_DB.status = 'Not Activated';
-            MOCK_DB.key = null;
-            MOCK_DB.expiryDate = null;
+const mockActivate = (key) => new Promise((resolve, reject) => {
+    setTimeout(() => {
+        if (key && key.length >= 16 && key.toUpperCase().includes('G')) {
+            MOCK_DB.status = 'Active';
+            MOCK_DB.key = key.toUpperCase();
+            MOCK_DB.expiryDate = MOCK_LICENSE_EXPIRY;
             resolve(true);
-          }, 800);
-        });
+        } else {
+            reject(new Error("Invalid or revoked key. (Mock Failure)"));
+        }
+    }, 1200);
+});
+
+const mockDeactivate = () => new Promise((resolve) => {
+    setTimeout(() => {
+        MOCK_DB.status = 'Not Activated';
+        MOCK_DB.key = null;
+        MOCK_DB.expiryDate = null;
+        resolve(true);
+    }, 800);
+});
+
+const isCppBackend = window.licenseAddon && true;
+
+const cppFetchStatus = () => {
+    const statusData = window.licenseAddon.getStatus();
+    return {
+        status: statusData.isActive ? 'Active' : 'Not Activated',
+        key: statusData.key || null,
+        expiryDate: statusData.expiryDate || 'N/A',
+    };
+};
+
+const cppActivate = (key) => {
+    const success = window.licenseAddon.activate(key);
+    if (!success) {
+        throw new Error("Activation failed. Invalid key format or internal error.");
+    }
+    return success;
+};
+
+const cppDeactivate = () => {
+    const success = window.licenseAddon.deactivate();
+    if (!success) {
+        throw new Error("Deactivation failed.");
+    }
+    return success;
+};
+
+const fetchLicenseStatus = () => {
+    return isCppBackend ? cppFetchStatus() : mockFetchStatus();
+};
+
+const activateLicense = (key) => {
+    return isCppBackend ? new Promise((resolve, reject) => {
+        try {
+            resolve(cppActivate(key));
+        } catch (e) {
+            reject(e);
+        }
+    }) : mockActivate(key);
+};
+
+const deactivateLicense = () => {
+    return isCppBackend ? new Promise((resolve, reject) => {
+        try {
+            resolve(cppDeactivate());
+        } catch (e) {
+            reject(e);
+        }
+    }) : mockDeactivate();
+};
 
         //adding
 
@@ -161,6 +223,7 @@
           const [licenseKeyInput, setLicenseKeyInput] = useState('');
           const [isLoading, setIsLoading] = useState(false);
           const [message, setMessage] = useState({ text: '', type: 'info' });
+          const [backendSource, setBackendSource] = useState(isCppBackend ? 'C++ Native Addon' : 'JavaScript Mock Service');
 
           const loadStatus = async () => {
             setIsLoading(true);
